@@ -1,0 +1,37 @@
+<!doctype html>
+<title>{% block title %}{% endblock %} - Core</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<div class="topnav">
+  <a class="active" href="{{ url_for('index') }}">Home</a>
+  <a href="#news">News</a>
+  <a href="#contact">Contact</a>
+  <a href="#about">About</a>
+  <div class='search'>
+    <form method='post'>
+      <button type='submit'class='search-button'>search</button>
+      <input class='search-input' type="text" id="search" name="search">
+    </form>
+  </div>
+</div>
+<nav>
+  <h1><a href="{{ url_for('index') }}" style='text-decoration: inherit;'>Core</a></h1>
+  <ul>
+    {% if g.user %}
+      <li><p class='username'>{{ g.user['username'] }}</p>
+      <li><a href="{{ url_for('auth.logout') }}"><button class='nav-button'>Log Out</button></a>
+    {% else %}
+      <li><a href="{{ url_for('auth.register') }}"><button class='nav-button'>Register</button></a>
+      <li><a href="{{ url_for('auth.login') }}"><button class='nav-button'>Log In</button></a>
+    {% endif %}
+  </ul>
+</nav>
+<section class="content">
+  <header>
+    {% block header %}{% endblock %}
+  </header>
+  {% for message in get_flashed_messages() %}
+    <div class="flash">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</section>
+

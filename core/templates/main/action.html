@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}<img src="{{ url_for('static', filename=action.img)}}" width='60' height='50'> {{ action.title }}{% endblock %}</h1>
+      {% if g.user %}
+        <a class="action" href="{{ url_for('main.create') }}">New</a>
+      {% endif %}
+{% endblock %}
+
+{% block content %}
+ {% for item in items %}
+    <article class="post">
+      <header>
+          <div>
+            <h1 >{% if item.yes_no == 'False' %} ✔️ {% else %} ❌ {% endif %} {{ item.text }} </h1>
+          </div>
+        {% if g.user.id == action.id_user %}
+           <a class="action" href="">Edit</a>
+        {% else %}
+            <a class="action" href="">Confirm</a>
+        {% endif %}
+      </header>
+    </article>
+      {% if not loop.last %}
+        <hr>
+      {% endif %}
+ {% endfor %}
+      <hr>
+ {% if g.user.id == action.id_user %}
+  <form method="post">
+      <label for="text">Add new one</label>
+        <input name="text" id="text" value="{{ request.form['text'] }}" required>
+      <input type="submit" value="Add new">
+ </form>
+ {% endif %}
+{% endblock %}
