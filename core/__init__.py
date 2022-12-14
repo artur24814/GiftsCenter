@@ -33,5 +33,7 @@ def create_app(test_config=None):
     from . import main
     app.register_blueprint(main.bp)
     app.add_url_rule('/', endpoint='index')
+    app.add_url_rule('/search', endpoint='search')
+    app.add_url_rule('/confirm/<int:id>/action', endpoint='confirm')
 
     return app

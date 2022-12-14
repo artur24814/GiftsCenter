@@ -28,9 +28,19 @@ CREARE_TABLE_ACTIONS = '''CREATE TABLE actions(
 CREATE_TABLE_ITEMS = '''CREATE TABLE items(
  id SERIAL PRIMARY KEY,
  id_action INTEGER REFERENCES actions(id) ON DELETE CASCADE,
+ id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
  text varchar(500),
  yes_no BOOLEAN)
 '''
+
+ADD_USER_TABLE_ITEMS = '''ALTER TABLE items ADD id_user INTEGER 
+REFERENCES users(id) ON DELETE CASCADE'''
+
+CREATE_TABLE_USERS_ACTIONS = """CREATE TABLE users_actions(
+id SERIAL PRIMARY KEY,
+id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
+id_action INTEGER REFERENCES actions(id) ON DELETE CASCADE)
+"""
 
 DB = os.getenv('DB')
 DB_USER = os.getenv('DB_USER')
@@ -74,7 +84,13 @@ def init_db():
             print('Table Items created')
         except DuplicateTable as e:
             print('Table itemss exist: ', e)
-            cnx.close()
+        try:
+            cursor.execute(CREATE_TABLE_USERS_ACTIONS)
+            print('Table Users Actions created')
+        except DuplicateTable as e:
+            print('Table users actions exist: ', e)
+
+        cnx.close()
 
     except OperationalError as e:
         print('Connection Error: ', e)

@@ -7,7 +7,7 @@
   <a href="#contact">Contact</a>
   <a href="#about">About</a>
   <div class='search'>
-    <form method='post'>
+    <form action="{{ url_for('search') }}" method="post">
       <button type='submit'class='search-button'>search</button>
       <input class='search-input' type="text" id="search" name="search">
     </form>

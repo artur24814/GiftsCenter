@@ -18,6 +18,16 @@ def hello():
     cnx.close()
     return render_template('main/index.html', actions=actions)
 
+@bp.route('/search', methods=['POST'])
+def search():
+    cnx, cursor = create_conn()
+    if request.method == 'POST':
+        search = request.form['search']
+        users = User.search(cursor, search)
+        actions = Actions.search(cursor, search)
+    cnx.close()
+    return render_template('main/search.html', actions=actions, users=users)
+
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
@@ -69,8 +79,8 @@ def get_action(id, check_author=True):
     if action is None:
         abort(404, f"Post id {id} doesn't exist.")
 
-    if check_author and action.id_user != g.user.id:
-        abort(403)
+    # if check_author and action.id_user != g.user.id:
+    #     abort(403)
 
     return action
 
@@ -130,9 +140,35 @@ def action(id):
             flash('text is required')
         else:
             cnx, cursor = create_conn()
-            item = Items(id_action=action.id, text=text, yes_no=False)
+            item = Items(id_action=action.id, text=text, yes_no=False, id_user=g.user.id)
             created = item.create(cursor)
             cnx.close()
             if created is not False:
                 return redirect(url_for('main.action', id=id))
     return render_template('main/action.html', action=action, items=items)
+
+def get_item(id, check_author=True):
+    cnx, cursor = create_conn()
+    item = Items.get_by_id(cursor,id)
+    if item is None:
+        abort(404, f"Post id {id} doesn't exist.")
+
+    # if Items.check_user(cursor, g.user.id, item.id_actions) == False:
+    #     return False
+    cnx.close()
+    return item
+
+
+@bp.route('/confirm/<int:id>/action', methods=('GET', 'POST'))
+@login_required
+def confirm_item(id):
+    item = get_item(id)
+    cnx, cursor = create_conn()
+    if Items.check_user(cursor, g.user.id, item.id_actions) != False:
+        item.yes_no = True
+        item.id_user = g.user.id
+        item.create(cursor)
+        cnx.close()
+    else:
+        flash("you already chosen one item, can't choose new")
+    return redirect(url_for('main.action', id=item.id_actions))

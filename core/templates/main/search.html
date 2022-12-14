@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Search result{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+{% for user in users %}
+    <article class="post">
+      <header>
+        <div>
+          <a href="/" style='text-decoration: inherit;'><h1 >{{ user.username }}</h1></a>
+        </div>
+      </header>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+  {% for action in actions %}
+    <article class="post">
+      <header>
+        <div>
+          <a href="{{ url_for('main.action', id=action.id) }}" style='text-decoration: inherit;'><h1 >{{ action.title }}</h1></a>
+          <div class="about">  on {{ action.date }}</div>
+        </div>
+        {% if g.user.id == action.id_user %}
+          <a class="action" href="{{ url_for('main.update', id=action.id) }}">Edit</a>
+        {% endif %}
+      </header>
+      <p class="body">{{ action.descriptions }}</p>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+{% endblock %}

@@ -74,27 +74,40 @@ class User:
         else:
             return None
 
-        @staticmethod
-        def get_all(cursor):
-            sql = "SELECT id, username, hashed_password FROM users"
+    @staticmethod
+    def get_all(cursor):
+        sql = "SELECT id, username, hashed_password FROM users"
 
         users = []
         cursor.execute(sql)
         for row in cursor.fetchall():
             id_, username, hashed_password = row
-        loaded_user = User()
-        loaded_user._id = id_
-        loaded_user.username = username
-        loaded_user._hashed_password = hashed_password
-        users.append(loaded_user)
+            loaded_user = User()
+            loaded_user._id = id_
+            loaded_user.username = username
+            loaded_user._hashed_password = hashed_password
+            users.append(loaded_user)
         return users
 
-        def delete(self, cursor):
-            sql = "DELETE FROM Users WHERE id=%s"
-
+    def delete(self, cursor):
+        sql = "DELETE FROM Users WHERE id=%s"
         cursor.execute(sql, (self._id,))
         self._id = -1
         return True
+
+    @staticmethod
+    def search(cursor, question):
+        sql = "SELECT id, username, hashed_password FROM users WHERE username ILIKE %s"
+        cursor.execute(sql, ('%'+ question + '%',))
+        users = []
+        for row in cursor.fetchall():
+            id_, username, hashed_password = row
+            loaded_user = User()
+            loaded_user._id = id_
+            loaded_user.username = username
+            loaded_user._hashed_password = hashed_password
+            users.append(loaded_user)
+        return users
 
 class Actions:
     def __init__(self, id_user, title, descriptions, date, image):
@@ -204,12 +217,27 @@ class Actions:
             cursor.execute(sql, values)
             return True
 
+
+    @staticmethod
+    def search(cursor, question):
+        sql = "SELECT * FROM actions WHERE title ILIKE %s"
+        cursor.execute(sql, ("%" + question + "%",))
+        actions = []
+        for row in cursor.fetchall():
+            id_, id_user, title, descriptions, date, img = row
+            loaded_action = Actions(id_user, title, descriptions, date, img)
+            loaded_action._id = id_
+            actions.append(loaded_action)
+        return actions
+
+
 class Items:
-    def __init__(self, id_action, text, yes_no):
+    def __init__(self, id_action, text, yes_no, id_user):
         self._id = -1
         self.id_actions = id_action
         self.text = text
         self.yes_no = yes_no
+        self.id_user = id_user
 
     @property
     def id(self):
@@ -218,17 +246,16 @@ class Items:
     def create(self, cursor):
         if Actions.get_by_id(cursor, self.id_actions) is None:
             return False
-
         if self._id == -1:
-            sql = """INSERT INTO items (id_action, text, yes_no) 
-            VALUES (%s, %s, %s) RETURNING id"""
-            values = (self.id_actions, self.text, self.yes_no)
+            sql = """INSERT INTO items (id_action, text, yes_no, id_user) 
+                    VALUES (%s, %s, %s, %s) RETURNING id"""
+            values = (self.id_actions, self.text, self.yes_no, self.id_user)
             cursor.execute(sql, values)
             self._id = cursor.fetchone()
             return True
         else:
-            sql = """UPDATE actions SET id_action=%s, text=%s, yes_no=%s WHERE id=%s"""
-            values = (self.id_actions, self.text, self.yes_no, self.id)
+            sql = """UPDATE items SET id_action=%s, text=%s, yes_no=%s, id_user=%s WHERE id=%s"""
+            values = (self.id_actions, self.text, self.yes_no, self.id_user, self.id)
             cursor.execute(sql, values)
             return True
 
@@ -238,8 +265,28 @@ class Items:
         items = []
         cursor.execute(sql, (id_action,))
         for row in cursor.fetchall():
-            id_, id_action_, text, yes_no = row
-            loaded_item = Items(id_action_, text, yes_no)
+            id_, id_action_, text, yes_no, id_user = row
+            loaded_item = Items(id_action_, text, yes_no, id_user)
             loaded_item._id = id_
             items.append(loaded_item)
         return items
+
+    @staticmethod
+    def get_by_id(cursor, id):
+        sql = "SELECT * FROM items WHERE id=%s"
+        cursor.execute(sql, (id,))
+        data = cursor.fetchone()
+        if data:
+            id_, id_action_, text, yes_no, id_user = data
+            loaded_item = Items(id_action_, text, yes_no, id_user)
+            loaded_item._id = id_
+            return loaded_item
+
+    @staticmethod
+    def check_user(cursor, id_user, id_action):
+        sql = "SELECT * FROM items WHERE id_action=%s and id_user=%s"
+        cursor.execute(sql, (id_action, id_user))
+        if len(cursor.fetchall()) == 0:
+            return True
+        else:
+            return False
