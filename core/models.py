@@ -290,3 +290,86 @@ class Items:
             return True
         else:
             return False
+
+class UsersActions:
+    def __init__(self, id_user, id_action):
+        self._id = -1
+        self.id_user = id_user
+        self.id_action = id_action
+
+    @property
+    def id(self):
+        return self._id
+
+    def create(self, cursor):
+        if self._id == -1 and self.check_user(cursor) is True:
+            sql = """INSERT INTO users_actions (id_user, id_action) 
+            VALUES (%s, %s) RETURNING id"""
+            values = (self.id_user, self.id_action)
+            cursor.execute(sql, values)
+            self._id = cursor.fetchone()
+            return True
+        else:
+            return False
+
+    def check_user(self, cursor):
+        sql = "SELECT * FROM users_actions WHERE id_user=%s and id_action=%s"
+        values = (self.id_user, self.id_action)
+        cursor.execute(sql, values)
+        if len(cursor.fetchall()) == 0:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def get_all_users(cursor, id_action):
+        sql = "SELECT * FROM users_actions WHERE id_action=%s"
+        values = (id_action, )
+        cursor.execute(sql, values)
+        users = []
+        for row in cursor.fetchall():
+            id_, id_user, id_action_ = row
+            loaded_user = UsersActions(id_user, id_action_)
+            loaded_user._id = id_
+            users.append(loaded_user)
+        return users
+
+class UserFriends:
+
+    def __int__(self, id_user, friend):
+        self._id = -1
+        self.id_user = id_user
+        self.friend = friend
+
+    @property
+    def id(self):
+        return self._id
+
+    def create(self, cursor):
+        if self._id == -1 and self.check_friend(cursor) is True:
+            sql = """INSERT INTO friends (id_user, friend)
+            VALUES (%s, %s) RETURNING id"""
+            values = (self.id_user, self.friend)
+            cursor.execute(sql, values)
+            self._id = cursor.fetchone()
+            return True
+        else:
+            return False
+
+    def check_friend(self, cursor):
+        sql = "SELECT * FROM friends WHERE id_user=%s and friend=%s"
+        values = (self.id_user, self.friend)
+        cursor.execute(sql, values)
+        if len(cursor.fetchall()) == 0:
+            return True
+        else:
+            return False
+
+    def delete_friend(self, cursor):
+        if self.check_friend(cursor) is False:
+            sql = "DELETE FROM friends WHERE id_user=%s and friend=%s"
+            values = (self.id_user, self.friend)
+            cursor.execute(sql, values)
+            return True
+        else:
+            return False

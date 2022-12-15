@@ -1,6 +1,7 @@
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for, current_app
 )
+from flask_mail import Mail, Message
 from werkzeug.exceptions import abort
 from core.auth import login_required
 from core.db import create_conn
@@ -47,10 +48,10 @@ def create():
             error = 'Date is required.'
 
         if img is None:
-            image_name = 'core/static/media/ico.png'
+            image_name = '/media/ico.png'
         else:
             try:
-                image_name = 'core/static/media/' + str(img.filename)
+                image_name = '/media/' + str(img.filename)
                 opened_img = Image.open(img)
                 if opened_img.format.lower() not in ['png', 'jpg', 'jpeg', 'tiff', 'bmp', 'gif']:
                     error = 'invalid image format'
@@ -63,8 +64,11 @@ def create():
             cnx, cursor = create_conn()
             action = Actions(id_user=g.user.id, title=title, descriptions=descriptions, date=date, image=image_name)
             if action.create(cursor) != 'Error date format!':
-                if image_name != 'core/static/media/ico.png':
-                    opened_img.save(os.path.join(str(os.getcwd()), image_name))
+                if image_name != '/media/ico.png':
+                    print(str(os.getcwd()))
+                    current_path = str(os.getcwd()) + '/core/static'
+                    print(os.path.join(os.path.normcase(current_path), image_name))
+                    opened_img.save(current_path + image_name)
                 cnx.close()
                 return redirect(url_for('index'))
             flash('Error date format!')
@@ -168,6 +172,10 @@ def confirm_item(id):
         item.yes_no = True
         item.id_user = g.user.id
         item.create(cursor)
+        mail = Mail(current_app)
+        msg = Message('Hello', sender='flaskApp@gmail.com', recipients=['artur24814@gmail.com'])
+        msg.body = f"Hello {g.user.username}, you reserve {item.text} for your present"
+        mail.send(msg)
         cnx.close()
     else:
         flash("you already chosen one item, can't choose new")

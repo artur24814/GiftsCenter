@@ -1,11 +1,13 @@
 import os
 from flask import Flask
 
-PEOPLE_FOLDER = os.path.join('static', 'media')
+
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
-    app.config['UPLOAD_FOLDER'] = PEOPLE_FOLDER
+    app.config['MAIL_SERVER'] = 'localhost'  # <----For tests
+    app.config['MAIL_PORT'] = 8025
     app.config.from_mapping(
         SECRET_KEY='dev'
     )

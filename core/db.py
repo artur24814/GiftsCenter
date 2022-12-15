@@ -42,6 +42,12 @@ id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
 id_action INTEGER REFERENCES actions(id) ON DELETE CASCADE)
 """
 
+CREATE_TABLE_USER_FRIENDS = """CREATE TABLE friends(
+id SERIAL PRIMARY KEY,
+id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
+friend INTEGER REFERENCES users(id) ON DELETE CASCADE)
+"""
+
 DB = os.getenv('DB')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
@@ -89,6 +95,12 @@ def init_db():
             print('Table Users Actions created')
         except DuplicateTable as e:
             print('Table users actions exist: ', e)
+
+        try:
+            cursor.execute(CREATE_TABLE_USER_FRIENDS)
+            print('Table User Friends created')
+        except DuplicateTable as e:
+            print('Table user friends exist: ', e)
 
         cnx.close()
 
