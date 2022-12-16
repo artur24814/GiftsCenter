@@ -2,9 +2,11 @@
 <title>{% block title %}{% endblock %} - Core</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <div class="topnav">
-  <a class="active" href="{{ url_for('index') }}">Home</a>
-  <a href="#news">News</a>
-  <a href="#contact">Contact</a>
+  <a class="active" href="{{ url_for('index') }}">Main page</a>
+  <a href="{{ url_for('main.my_friends') }}">My friends</a>
+  {% if g.user %}
+  <a href="{{ url_for('main.user_actions', id=g.user.id) }}">My Actions</a>
+  {% endif %}
   <a href="#about">About</a>
   <div class='search'>
     <form action="{{ url_for('search') }}" method="post">

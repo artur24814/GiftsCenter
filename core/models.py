@@ -1,4 +1,6 @@
 from core.core_security import hash_password
+from flask import current_app, url_for
+from flask_mail import Mail, Message
 
 import datetime
 
@@ -308,6 +310,12 @@ class UsersActions:
             values = (self.id_user, self.id_action)
             cursor.execute(sql, values)
             self._id = cursor.fetchone()
+            user = User.get_user_by_id(cursor, self.id_user)
+            action = Actions.get_by_id(cursor, self.id_action)
+            mail = Mail(current_app)
+            msg = Message('Hello', sender='flaskApp@gmail.com', recipients=['artur24814@gmail.com'])
+            msg.body = f"Hello {user.username}, your was invited to {action.title} {url_for('main.action', id=action.id)}!!!"
+            mail.send(msg)
             return True
         else:
             return False
@@ -323,20 +331,19 @@ class UsersActions:
 
     @staticmethod
     def get_all_users(cursor, id_action):
-        sql = "SELECT * FROM users_actions WHERE id_action=%s"
+        sql = "SELECT id_user FROM users_actions WHERE id_action=%s"
         values = (id_action, )
         cursor.execute(sql, values)
         users = []
         for row in cursor.fetchall():
-            id_, id_user, id_action_ = row
-            loaded_user = UsersActions(id_user, id_action_)
-            loaded_user._id = id_
+            id_user = row
+            loaded_user = User.get_user_by_id(cursor, id_user)
             users.append(loaded_user)
         return users
 
 class UserFriends:
 
-    def __int__(self, id_user, friend):
+    def __init__(self, id_user, friend):
         self._id = -1
         self.id_user = id_user
         self.friend = friend
@@ -373,3 +380,14 @@ class UserFriends:
             return True
         else:
             return False
+
+    @staticmethod
+    def get_friends(cursor, id_user):
+        sql = "SELECT friend FROM friends WHERE id_user=%s"
+        cursor.execute(sql, (id_user,))
+        users = []
+        for row in cursor.fetchall():
+            id_ = row
+            loaded_user = User.get_user_by_id(cursor,id_)
+            users.append(loaded_user)
+        return users

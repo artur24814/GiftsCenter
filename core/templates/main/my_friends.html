@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}{{ g.user.username }}s Friends{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+{% for user in users %}
+    <article class="post">
+      <header>
+        <div>
+          <a href="{{ url_for('main.user_actions', id=user.id) }}" style='text-decoration: inherit;'><h1 >{{ user.username }}</h1></a>
+        </div>
+        <a class="action" href="/" ><button class="confirm-button">Delete</button></a>
+      </header>
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+{% endblock %}

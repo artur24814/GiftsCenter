@@ -8,6 +8,25 @@
 {% endblock %}
 
 {% block content %}
+    <h1>Invited friends:</h1>
+      {% for user in users %}
+          <p>{{ user.username }}</p>
+      {% endfor %}
+    <hr>
+        {% if g.user.id == action.id_user %}
+          <form method="post" action="{{ url_for('main.add_to_action', id=action.id )}}">
+            <label for="friends">Add friends to your actions</label>
+                <select name="friends" id="friends" multiple size="4">
+                    <option value="0" disabled></option>
+                    {% for user in all_users %}
+                      <option value='{{ user.id }}'>{{ user.username }}</option>
+                      {% endfor %}
+                </select>
+              <hr>
+            <input type="submit" value="Add friend">
+          </form>
+        <hr>
+        {% endif %}
   {% for item in items %}
     <article class="post">
       <header>

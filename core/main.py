@@ -5,7 +5,7 @@ from flask_mail import Mail, Message
 from werkzeug.exceptions import abort
 from core.auth import login_required
 from core.db import create_conn
-from .models import Actions, User, Items
+from .models import Actions, User, Items, UsersActions, UserFriends
 from PIL import Image
 import os
 
@@ -33,11 +33,14 @@ def search():
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
+    cnx, cursor = create_conn()
+    users = UserFriends.get_friends(cursor, g.user.id)
     if request.method == 'POST':
         title = request.form['title']
         descriptions = request.form['descriptions']
         date = request.form['date']
         img = request.files['image']
+        friends = request.form.getlist('friends')
 
         error = None
 
@@ -61,24 +64,29 @@ def create():
         if error is not None:
             flash(error)
         else:
-            cnx, cursor = create_conn()
             action = Actions(id_user=g.user.id, title=title, descriptions=descriptions, date=date, image=image_name)
             if action.create(cursor) != 'Error date format!':
                 if image_name != '/media/ico.png':
-                    print(str(os.getcwd()))
                     current_path = str(os.getcwd()) + '/core/static'
-                    print(os.path.join(os.path.normcase(current_path), image_name))
                     opened_img.save(current_path + image_name)
+                try:
+                    for friend in friends:
+                        user_action = UsersActions(int(friend), action.id)
+                        user_action.create(cursor)
+                except:
+                    flash('Upss... some friend not added, please add they manual')
+                    pass
                 cnx.close()
                 return redirect(url_for('index'))
             flash('Error date format!')
 
-    return render_template('main/create.html')
+    return render_template('main/create.html', users=users)
 
 
 def get_action(id, check_author=True):
     cnx, cursor = create_conn()
     action = Actions.get_by_id(cursor, id)
+    users = UsersActions.get_all_users(cursor, id)
     cnx.close()
     if action is None:
         abort(404, f"Post id {id} doesn't exist.")
@@ -86,13 +94,13 @@ def get_action(id, check_author=True):
     # if check_author and action.id_user != g.user.id:
     #     abort(403)
 
-    return action
+    return action, users
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
-    action = get_action(id)
+    action, users = get_action(id)
 
     if request.method == 'POST':
         title = request.form['title']
@@ -116,7 +124,7 @@ def update(id):
                 return redirect(url_for('index'))
             flash('Error date format!')
 
-    return render_template('main/update.html', action=action)
+    return render_template('main/update.html', action=action, users=users)
 
 
 @bp.route('/<int:id>/delete', methods=('POST',))
@@ -132,9 +140,10 @@ def delete(id):
 @bp.route('/<int:id>/action', methods=('GET', 'POST'))
 @login_required
 def action(id):
-    action = get_action(id)
+    action, users = get_action(id)
     cnx, cursor = create_conn()
     items = Items.get_items(cursor, action.id)
+    all_users = UserFriends.get_friends(cursor, g.user.id)
     if action.img is None:
         action.img = 'ico.png'
     cnx.close()
@@ -149,7 +158,7 @@ def action(id):
             cnx.close()
             if created is not False:
                 return redirect(url_for('main.action', id=id))
-    return render_template('main/action.html', action=action, items=items)
+    return render_template('main/action.html', action=action, items=items, users=users, all_users=all_users)
 
 def get_item(id, check_author=True):
     cnx, cursor = create_conn()
@@ -180,3 +189,52 @@ def confirm_item(id):
     else:
         flash("you already chosen one item, can't choose new")
     return redirect(url_for('main.action', id=item.id_actions))
+
+@bp.route('/add_friend/<int:id>', methods=['GET'])
+@login_required
+def add_friend(id):
+    cnx, cursor = create_conn()
+    user = User.get_user_by_id(cursor, id)
+    if user is None:
+        flash('This user is not exist')
+        return redirect(url_for('index'))
+
+    user_friend = UserFriends(g.user.id, id)
+    if user_friend.create(cursor) is True:
+        flash(f'You and {user.username} now are friends')
+    cnx.close()
+    return redirect(url_for('index'))
+
+@bp.route('/my_friends', methods=['GET'])
+@login_required
+def my_friends():
+    cnx, cursor = create_conn()
+    users = UserFriends.get_friends(cursor, g.user.id)
+    cnx.close()
+    return render_template('main/my_friends.html', users=users)
+
+@bp.route('/add_friend_to_actions/<int:id>', methods=['POST'])
+@login_required
+def add_to_action(id):
+    if request.method == 'POST':
+        friends = request.form.getlist('friends')
+        action, users = get_action(id)
+        cnx, cursor = create_conn()
+        try:
+            for friend in friends:
+                user_action = UsersActions(int(friend), action.id)
+                user_action.create(cursor)
+        except:
+            flash('Upss... some friend not added, please add they manual')
+            pass
+        cnx.close()
+        return redirect(url_for('main.action', id=id))
+
+@bp.route('/users-actions/<int:id>', methods=['GET'])
+@login_required
+def user_actions(id):
+    cnx, cursor = create_conn()
+    actions = Actions.set_users_action(cursor, id)
+    return render_template('main/user_actions.html', actions=actions)
+
+

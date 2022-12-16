@@ -10,8 +10,18 @@
       <input name="title" id="title" value="{{ request.form['title'] }}" required>
     <label for="body">Descriptions</label>
         <textarea name="descriptions" id="body">{{ request.form['descriptions'] }}</textarea>
+     <label for="date">Date Action</label>
       <input type='date' name='date' id='date' value="{{ request.form['date'] }}" required>
+     <label for="image">Image</label>
       <input type="file" id="image" name='image' accept="image/*">
+     <label for="friends">Add friends to your actions</label>
+        <select name="friends" id="friends" multiple>
+            <option value="0" disabled></option>
+            {% for user in users %}
+              <option value='{{ user.id }}'>{{ user.username }}</option>
+              {% endfor %}
+        </select>
+     <hr>
     <input type="submit" value="Save">
  </form>
 {% endblock %}
