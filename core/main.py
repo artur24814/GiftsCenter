@@ -182,7 +182,7 @@ def confirm_item(id):
         item.id_user = g.user.id
         item.create(cursor)
         mail = Mail(current_app)
-        msg = Message('Hello', sender='flaskApp@gmail.com', recipients=['artur24814@gmail.com'])
+        msg = Message('Hello', sender='flaskApp@gmail.com', recipients=[f'{g.user.email}'])
         msg.body = f"Hello {g.user.username}, you reserve {item.text} for your present"
         mail.send(msg)
         cnx.close()

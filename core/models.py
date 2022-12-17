@@ -6,10 +6,11 @@ import datetime
 
 
 class User:
-    def __init__(self, username='', password='', salt=''):
+    def __init__(self, username='', password='', email='', salt=''):
         self._id = -1
         self.username = username
         self._hashed_password = hash_password(password, salt)
+        self.email= email
 
     @property
     def id(self):
@@ -28,47 +29,49 @@ class User:
 
     def create_user(self, cursor):
         if self._id == -1:
-            sql = """INSERT INTO users(username, hashed_password)
-                            VALUES(%s, %s) RETURNING id"""
-            values = (self.username, self.hashed_password)
+            sql = """INSERT INTO users(username, hashed_password, email)
+                            VALUES(%s, %s, %s) RETURNING id"""
+            values = (self.username, self.hashed_password, self.email)
             cursor.execute(sql, values)
             self._id = cursor.fetchone()[0]
             return True
         else:
-            sql = """UPDATE users SET username=%s, hashed_password=%s
+            sql = """UPDATE users SET username=%s, hashed_password=%s, email=%s
                            WHERE id=%s"""
-            values = (self.username, self.hashed_password, self.id)
+            values = (self.username, self.hashed_password, self.email, self.id)
             cursor.execute(sql, values)
             return True
 
     @staticmethod
     def get_user_by_id(cursor, id_):
-        sql = 'SELECT id, username, hashed_password FROM users WHERE id=%s'
+        sql = 'SELECT id, username, hashed_password, email FROM users WHERE id=%s'
         cursor.execute(sql, (id_,))
         data = cursor.fetchone()
         if data:
-            id_, username, hashed_password = data
+            id_, username, hashed_password, email = data
             loaded_user = User(username)
             loaded_user._id = id_
             loaded_user._hashed_password = hashed_password
+            loaded_user.email = email
             return loaded_user
         else:
             return None
 
     @staticmethod
     def load_user_by_username(cursor, username):
-        sql = "SELECT id, username, hashed_password FROM users WHERE username=%s"
+        sql = "SELECT id, username, hashed_password, email FROM users WHERE username=%s"
         cursor.execute(sql, (username,))  # (username, ) - cause we need a tuple
         data = cursor.fetchone()
         if data:
-            id_, username, hashed_password = data
+            id_, username, hashed_password, email = data
             loaded_user = User(username)
             loaded_user._id = id_
             loaded_user._hashed_password = hashed_password
+            loaded_user.email = email
             return loaded_user
 
     def check_user(self, cursor):
-        sql = 'SELECT id, username, hashed_password FROM users WHERE username=%s AND hashed_password=%s'
+        sql = 'SELECT id, username, hashed_password, email FROM users WHERE username=%s AND hashed_password=%s'
         cursor.execute(sql, (self.username, self._hashed_password))
         data = cursor.fetchone()
         if data:
@@ -78,16 +81,17 @@ class User:
 
     @staticmethod
     def get_all(cursor):
-        sql = "SELECT id, username, hashed_password FROM users"
+        sql = "SELECT id, username, hashed_password, email FROM users"
 
         users = []
         cursor.execute(sql)
         for row in cursor.fetchall():
-            id_, username, hashed_password = row
+            id_, username, hashed_password, email = row
             loaded_user = User()
             loaded_user._id = id_
             loaded_user.username = username
             loaded_user._hashed_password = hashed_password
+            loaded_user.email = email
             users.append(loaded_user)
         return users
 
@@ -99,17 +103,26 @@ class User:
 
     @staticmethod
     def search(cursor, question):
-        sql = "SELECT id, username, hashed_password FROM users WHERE username ILIKE %s"
+        sql = "SELECT id, username, hashed_password, email FROM users WHERE username ILIKE %s"
         cursor.execute(sql, ('%'+ question + '%',))
         users = []
         for row in cursor.fetchall():
-            id_, username, hashed_password = row
+            id_, username, hashed_password, email = row
             loaded_user = User()
             loaded_user._id = id_
             loaded_user.username = username
             loaded_user._hashed_password = hashed_password
+            loaded_user.email = email
             users.append(loaded_user)
         return users
+
+    @staticmethod
+    def set_email(cursor, id, email):
+        user = User.get_user_by_id(cursor, id)
+        user.email = email
+        user.create_user(cursor)
+        return True
+
 
 class Actions:
     def __init__(self, id_user, title, descriptions, date, image):
@@ -313,7 +326,7 @@ class UsersActions:
             user = User.get_user_by_id(cursor, self.id_user)
             action = Actions.get_by_id(cursor, self.id_action)
             mail = Mail(current_app)
-            msg = Message('Hello', sender='flaskApp@gmail.com', recipients=['artur24814@gmail.com'])
+            msg = Message('Hello', sender='flaskApp@gmail.com', recipients=[f'{user.email}'])
             msg.body = f"Hello {user.username}, your was invited to {action.title} {url_for('main.action', id=action.id)}!!!"
             mail.send(msg)
             return True

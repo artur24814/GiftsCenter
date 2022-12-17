@@ -14,7 +14,8 @@ CREATE_DB = "CREATE DATABASE flask_database;"
 CREATE_USERS_TABLE = """CREATE TABLE users(
  id serial PRIMARY KEY, 
  username varchar(255) UNIQUE,
- hashed_password varchar(80))"""
+ hashed_password varchar(80),
+ email VARCHAR(200))"""
 
 CREARE_TABLE_ACTIONS = '''CREATE TABLE actions(
  id SERIAL PRIMARY KEY,
@@ -31,6 +32,8 @@ CREATE_TABLE_ITEMS = '''CREATE TABLE items(
  id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
  text varchar(500),
  yes_no BOOLEAN)
+'''
+ADD_USER_EMAIL_FIELD = '''ALTER TABLE users ADD email VARCHAR(200)
 '''
 
 ADD_USER_TABLE_ITEMS = '''ALTER TABLE items ADD id_user INTEGER 
@@ -101,6 +104,7 @@ def init_db():
             print('Table User Friends created')
         except DuplicateTable as e:
             print('Table user friends exist: ', e)
+
 
         cnx.close()
 
