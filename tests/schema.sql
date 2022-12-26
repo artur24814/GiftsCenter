@@ -1,0 +1,29 @@
+DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS actions;
+
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  hashed_password TEXT NOT NULL,
+  email TEXT
+);
+
+CREATE TABLE actions (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ id_user INTEGER NOT NULL,
+ title TEXT NOT NULL,
+ descriptions TEXT,
+ date DATE,
+ img TEXT,
+ FOREIGN KEY (id_user) REFERENCES users (id)
+);
+
+CREATE TABLE items (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ id_user INTEGER NOT NULL,
+ id_action INTEGER NOT NULL,
+ text TEXT,
+ yes_no BOOLEAN,
+ FOREIGN KEY (id_action) REFERENCES actions (id),
+ FOREIGN KEY (id_user) REFERENCES users (id)
+);

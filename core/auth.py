@@ -3,10 +3,8 @@ import functools
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, session, url_for
 )
-from core.core_security import check_password
 
 from core.db import create_conn
-
 from core.models import User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -20,6 +18,7 @@ def register():
         cnx, cursor = create_conn()
         error = None
 
+        #validate form
         if not username:
             error = 'Username is required.'
         elif not password:
@@ -27,6 +26,7 @@ def register():
         elif not email:
             error = 'Email is required'
 
+        #cereate user
         if error is None:
             try:
                 user = User(username, password, email)
@@ -49,13 +49,14 @@ def login():
         password = request.form['password']
         cnx, cursor = create_conn()
         error = None
-        user = User(username,password)
+        #create object User
+        user = User(username, password)
 
-        if user is None:
-            error = 'Incorrect username.'
-        elif not user.check_user(cursor):
-            error = 'Incorrect password.'
+        #check user
+        if not user.check_user(cursor):
+            error = 'Incorrect password or username.'
         if error is None:
+            #clear session and put user in session
             session.clear()
             session['user_id'] = User.load_user_by_username(cursor, username).id
             cnx.close()
@@ -81,9 +82,11 @@ def load_logged_in_user():
         g.user = User.get_user_by_id(cursor, user_id)
         cnx.close()
 
+#decorator for redirect to login view
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
+        #if user is not login
         if g.user is None:
             return redirect(url_for('auth.login'))
 
